@@ -1,362 +1,141 @@
-<!doctype html>
+<!--v1-->
+<!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <title>VTickets</title>
+    <head>
+        <meta charset="utf-8" />
+        <title>VTickets</title>
 
-  <!-- GitHub Pages bajo /scanticket/ -->
-  <base href="/scanticket/">
+        <!-- GitHub Pages bajo /vtickets/ -->
+        <base href="/vtickets/" />
 
-  <link rel="icon" href="favicon.ico">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="favicon.ico" />
+        <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <style>
-    :root{
-      --bg:#0b0d12; --card:#121621; --txt:#e7ecf3; --muted:#9aa4b2; --acc:#4f8cff;
-      --border:#1f2636; --focus:#7aa7ff; --danger:#ef4444; --radius:18px;
-      --good:#22c55e; --bad:#ef4444; /* ← antes faltaban */
-    }
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; }
-    body{
-      margin:0; font-family: ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;
-      background:var(--bg); color:var(--txt); display:grid; place-items:center; padding:24px;
-    }
+        <link rel="stylesheet" href="style.css?v=0.6" />
+    </head>
+    <body>
+        <!-- Fondo animado -->
+        <div class="background">
+		   <span></span>
+		   <span></span>
+		   <span></span>
+		   <span></span>
+		   <span></span>
+		   <span></span>
+		   <span></span>
+		   <span></span>
+		   <span></span>
+		   <span></span>
+		   <span></span>
+		   <span></span>
+		   <span></span>
+		   <span></span>
+		   <span></span>
+		   <span></span>
+		   <span></span>
+		   <span></span>
+		   <span></span>
+		   <span></span>
+		</div>
 
-    /* ---------- Contenedor general y tarjetas (para la vista app) ---------- */
-    .container{ width:min(880px,100%); }
-    .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
-           padding:clamp(16px,4vw,28px); box-shadow:0 10px 30px rgba(0,0,0,.20); }
-    .hidden{ display:none !important; }
+        <div class="app">
+            <!-- SPLASH -->
+            <section id="splash" class="splash" aria-label="Cargando...">
+                <div class="splash__brand">
+                    <div class="splash__logo">
+                        <img src="logo.png" alt="logo" class="auth__logo" onerror="this.style.display='none'" />
+                    </div>
+                    <div class="splash__title">VTickets</div>
+                </div>
+            </section>
 
-    header.app-header{ display:flex; align-items:center; gap:12px; margin-bottom:16px; }
-    header.app-header img{ width:36px; height:36px; }
-    .title{ font-weight:700; letter-spacing:.2px; }
-    .muted{ color:var(--muted); }
+            <!-- ============ LOGIN VIEW ============ -->
+            <section id="loginView" class="auth">
+                <div class="auth__card">
+                    <header class="auth__brand">
+                        <img src="logo.png" alt="logo" class="auth__logo" onerror="this.style.display='none'" />
+                        <h1 class="auth__title">VTickets</h1>
+                        <p class="auth__subtitle">Inicia sesión para continuar</p>
+                    </header>
 
-    .grid{ display:grid; gap:12px; grid-template-columns:repeat(12,1fr); }
-    .span-12{ grid-column:span 12; }
-    .span-4{ grid-column:span 4; }
-    @media (max-width:720px){ .span-4{ grid-column:span 12; } }
+                    <div class="auth__form">
+                        <label class="field">
+                            <span class="field__label">Usuario</span>
+                            <input id="u" class="field__input fs-3" inputmode="email" autocomplete="username" placeholder="usuario" />
+                        </label>
 
-    .row{ display:flex; gap:12px; align-items:center; }
+                        <label class="field">
+                            <span class="field__label">Contraseña</span>
+                            <div class="field__password">
+                                <input id="p" class="field__input fs-3" type="password" autocomplete="current-password" placeholder="••••••••" />
+                                <button type="button" class="field__toggle fs-3" aria-label="Mostrar/Ocultar contraseña">👁</button>
+                            </div>
+                        </label>
+                        <button id="loginBtn" class="btn btn--full">
+                            <span class="btn__label fs-3">Entrar</span>
+                            <span class="btn__spinner" aria-hidden="true"></span>
+                        </button>
+                        <p id="loginMsg" class="auth__msg msg" role="status" aria-live="polite"></p>
+                    </div>
+                </div>
+            </section>
 
-    .input{
-      width:100%; padding:12px 14px; border-radius:12px; background:#0e1220; border:1px solid #1c2335; color:var(--txt);
-    }
-    .input::placeholder{ color:#6c7687; }
+            <!-- ============ APP VIEW ============ -->
+            <div id="appView" class="card hidden">
+                <header id="appHeader" class="app-header">
+                    <img src="logo.png" alt="logo" onerror="this.style.display='none'" />
+                    <div>
+                        <div class="title">VTickets</div>
+                        <div id="pingMsg" class="muted">Comprobando servicio…</div>
+                    </div>
+                    <div style="margin-left: auto;">
+                        <button id="logoutBtn" class="btn btn--ghost">Salir</button>
+                    </div>
+                </header>
 
-    .btn{
-      position:relative; display:inline-flex; align-items:center; justify-content:center; gap:8px;
-      padding:12px 16px; border-radius:12px; background:var(--acc); color:#fff; border:none; font-weight:700;
-      transition:transform .05s ease, filter .2s ease; user-select:none;
-    }
-    .btn:hover{ filter:brightness(1.05); }
-    .btn:active{ transform:translateY(1px); }
-    .btn[disabled]{ opacity:.7; cursor:not-allowed; }
-    .btn--ghost{ background:transparent; color:var(--txt); border:1px solid #2a334a; font-weight:600; }
-    .btn--full{ width:100%; }
-    .btn__spinner{
-      display:none; inline-size:1em; block-size:1em; border:2px solid currentColor; border-right-color:transparent; border-radius:50%;
-      animation:spin .6s linear infinite; vertical-align:-0.125em;
-    }
-    .btn.is-loading .btn__label{ visibility:hidden; }
-    .btn.is-loading .btn__spinner{ display:inline-block; }
-    @keyframes spin{ to{ transform:rotate(360deg); } }
+                <div class="grid" style="margin-bottom: 10px;">
+                    <div class="span-12 stat">
+                        <div class="label">Estado</div>
+                        <div id="statusMsg" class="value">Listo</div>
+                    </div>
+                </div>
 
-    .msg{ min-height:1.25rem; font-size:.95rem; }
-    .msg--good{ color:var(--good); }
-    .msg--bad{ color:var(--bad); }
+                <div class="grid">
+                    <div class="span-12 stat">
+                        <div class="label">Escaneo</div>
+                        <div class="row" style="margin-top: 8px; gap: 8px;">
+                            <input id="scanInput" class="input" placeholder="Serial del ticket" />
+                            <button id="scanBtn" class="btn">
+                                <span class="btn__label">Escanear</span>
+                                <span class="btn__spinner" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                        <div id="scanMsg" class="msg" style="margin-top: 8px;"></div>
+                    </div>
 
-    .stat{ padding:14px; border-radius:12px; background:#0e1220; border:1px solid #1c2335; }
-    .stat .label{ font-size:.85rem; color:var(--muted); }
-    .stat .value{ font-size:1.35rem; font-weight:800; letter-spacing:.3px; }
-    .footer{ margin-top:10px; color:var(--muted); font-size:.9rem; text-align:center; }
+                    <div class="span-12">
+                        <div class="grid">
+                            <div class="span-4 stat">
+                                <div class="label">Tickets totales</div>
+                                <div id="st_total" class="value">—</div>
+                            </div>
+                            <div class="span-4 stat">
+                                <div class="label">Usados</div>
+                                <div id="st_used" class="value">—</div>
+                            </div>
+                            <div class="span-4 stat">
+                                <div class="label">Pendientes</div>
+                                <div id="st_pending" class="value">—</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-    /* ---------- Login mobile-first ---------- */
-    .auth{
-      min-height:100dvh; display:grid; place-items:center;
-      padding:max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
-      background:
-        radial-gradient(1000px 600px at 110% -10%, #1a2540 0%, transparent 60%),
-        radial-gradient(900px 500px at -10% 110%, #172035 0%, transparent 60%),
-        var(--bg);
-    }
-    .auth__card{
-      width:min(440px,100%); background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
-      padding:clamp(16px,4.5vw,28px); box-shadow:0 10px 30px rgba(0,0,0,.25);
-    }
-    .auth__brand{ text-align:center; margin-bottom:16px; }
-    .auth__logo{ width:56px; height:56px; margin-bottom:8px; }
-    .auth__title{ margin:0; font-size:clamp(1.2rem, 2.4vw + .6rem, 1.5rem); font-weight:800; letter-spacing:.2px; }
-    .auth__subtitle{ margin:.25rem 0 0; color:var(--muted); font-size:.95rem; }
-
-    .auth__form{ display:flex; flex-direction:column; gap:14px; margin-top:12px; }
-    .field{ display:flex; flex-direction:column; gap:6px; }
-    .field__label{ font-size:.9rem; color:var(--muted); }
-    .field__input{
-      width:100%; padding:14px; border-radius:14px; background:#0e1220; border:1px solid #1c2335; color:var(--txt);
-      font-size:1rem; outline:none; transition:border-color .15s ease, box-shadow .15s ease;
-    }
-    .field__input::placeholder{ color:#6c7687; }
-    .field__input:focus{ border-color:var(--focus); box-shadow:0 0 0 3px rgba(122,167,255,.18); }
-
-    .field__password{ position:relative; display:flex; align-items:center; }
-    .field__password .field__input{ padding-right:42px; }
-    .field__toggle{
-      position:absolute; right:8px; top:50%; transform:translateY(-50%);
-      display:grid; place-items:center; width:32px; height:32px;
-      border-radius:10px; background:transparent; border:1px solid #28314a; color:var(--muted); cursor:pointer;
-    }
-    .field__toggle:hover{ color:var(--txt); border-color:#3a4664; }
-
-    @media (max-width:420px){ .field__input{ font-size:16px; } } /* evita zoom iOS */
-  </style>
-</head>
-<body>
-  <div class="container">
-
-    <!-- ============ LOGIN VIEW ============ -->
-    <section id="loginView" class="auth">
-      <div class="auth__card">
-        <header class="auth__brand">
-          <img src="assets/logo.svg" alt="logo" class="auth__logo" onerror="this.style.display='none'">
-          <h1 class="auth__title">VTickets</h1>
-          <p class="auth__subtitle">Inicia sesión para continuar</p>
-        </header>
-
-        <div class="auth__form">
-          <label class="field">
-            <span class="field__label">Usuario</span>
-            <input id="u" class="field__input" inputmode="email" autocomplete="username" placeholder="usuario">
-          </label>
-
-          <label class="field">
-            <span class="field__label">Contraseña</span>
-            <div class="field__password">
-              <input id="p" class="field__input" type="password" autocomplete="current-password" placeholder="••••••••">
-              <button type="button" class="field__toggle" aria-label="Mostrar/Ocultar contraseña"
-                onclick="(function(b){const i=b.previousElementSibling;i.type=i.type==='password'?'text':'password';b.setAttribute('aria-pressed', i.type==='text');})(this)">👁</button>
+                <div class="footer">© VTickets 2025 • <span class="muted">v1</span></div>
             </div>
-          </label>
-
-          <button id="loginBtn" class="btn btn--full">
-            <span class="btn__label">Entrar</span>
-            <span class="btn__spinner" aria-hidden="true"></span>
-          </button>
-
-          <p id="loginMsg" class="auth__msg msg" role="status" aria-live="polite"></p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ APP VIEW ============ -->
-    <div id="appView" class="card hidden">
-      <header id="appHeader" class="app-header">
-        <img src="assets/logo.svg" alt="logo" onerror="this.style.display='none'">
-        <div>
-          <div class="title">VTickets</div>
-          <div id="pingMsg" class="muted">Comprobando servicio…</div>
-        </div>
-        <div style="margin-left:auto;">
-          <button id="logoutBtn" class="btn btn--ghost">Salir</button>
-        </div>
-      </header>
-
-      <div class="grid" style="margin-bottom:10px;">
-        <div class="span-12 stat">
-          <div class="label">Estado</div>
-          <div id="statusMsg" class="value">Listo</div>
-        </div>
-      </div>
-
-      <div class="grid">
-        <div class="span-12 stat">
-          <div class="label">Escaneo</div>
-          <div class="row" style="margin-top:8px; gap:8px;">
-            <input id="scanInput" class="input" placeholder="Serial del ticket">
-            <button id="scanBtn" class="btn">
-              <span class="btn__label">Escanear</span>
-              <span class="btn__spinner" aria-hidden="true"></span>
-            </button>
-          </div>
-          <div id="scanMsg" class="msg" style="margin-top:8px;"></div>
         </div>
 
-        <div class="span-12">
-          <div class="grid">
-            <div class="span-4 stat"><div class="label">Tickets totales</div><div id="st_total" class="value">—</div></div>
-            <div class="span-4 stat"><div class="label">Usados</div><div id="st_used" class="value">—</div></div>
-            <div class="span-4 stat"><div class="label">Pendientes</div><div id="st_pending" class="value">—</div></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="footer">© VTickets 2025 • <span class="muted">v1</span></div>
-    </div>
-
-  </div>
-
-  <script>
-    /* ===== Helpers UI ===== */
-    const $ = (s, r=document)=>r.querySelector(s);
-    function setLoading(btn, on=true){
-      if(!btn) return;
-      btn.disabled = !!on;
-      btn.classList.toggle('is-loading', !!on);
-      if(on) btn.setAttribute('aria-busy','true'); else btn.removeAttribute('aria-busy');
-    }
-
-    /* ===== Config ===== */
-    const BASE = 'https://script.google.com/macros/s/AKfycbxEuW5orH9hSyljDjjRQdgazNqZ5zcfmAklwCWP5jmQ_thBDLoAACezdpYzwj3vChlkqg/exec';
-    const qs = o => new URLSearchParams(o);              /* ← una sola vez */
-    const getToken = () => localStorage.getItem('vk_token') || '';
-    const setToken = t => localStorage.setItem('vk_token', t);
-    const clearToken = () => localStorage.removeItem('vk_token'); /* ← faltaba */
-
-    async function withTimeout(executor, ms=15000){
-      const ac = new AbortController();
-      const t = setTimeout(()=>ac.abort(), ms);
-      try{ const res = await executor(ac.signal); clearTimeout(t); return res; }
-      catch(e){ clearTimeout(t); throw e; }
-    }
-
-    /* ===== API sin preflight ===== */
-    async function apiGet(path, params={}){
-      const url = new URL(BASE);
-      url.search = qs({ path, token:getToken(), ...params }).toString();
-      return withTimeout(async (signal)=>{
-        const res = await fetch(url.toString(), { method:'GET', mode:'cors', cache:'no-store', signal });
-        const j = await res.json().catch(()=> ({}));
-        if(!j.ok) throw Object.assign(new Error(j.message||'Error API'), { code:j.code||'API_ERROR', raw:j });
-        return j;
-      });
-    }
-    async function apiPost(path, data={}){
-      // Incluye token automáticamente en TODOS los POST excepto login
-      const payload = (path === 'login') ? data : { token:getToken(), ...data };
-      const res = await fetch(`${BASE}?path=${encodeURIComponent(path)}`, {
-        method:'POST',
-        headers:{ 'Content-Type':'application/x-www-form-urlencoded' },
-        body: qs(payload),
-        cache:'no-store'
-      });
-      const j = await res.json().catch(()=> ({}));
-      if(!j.ok) throw Object.assign(new Error(j.message||'Error API'), { code:j.code||'API_ERROR', raw:j });
-      return j;
-    }
-
-    /* ===== App logic ===== */
-    const loginView = $('#loginView');
-    const appView   = $('#appView');
-    const loginBtn  = $('#loginBtn');
-    const scanBtn   = $('#scanBtn');
-    const logoutBtn = $('#logoutBtn');
-
-    function showLogin(){
-      loginView.classList.remove('hidden');
-      appView.classList.add('hidden');
-      $('#loginMsg').textContent = '';
-      $('#statusMsg') && ($('#statusMsg').textContent = 'Listo');
-    }
-    function showApp(){
-      loginView.classList.add('hidden');
-      appView.classList.remove('hidden');
-    }
-
-    async function ping(){
-      const el = $('#pingMsg');
-      if(!el) return;
-      el.textContent = 'Comprobando servicio…';
-      try{ const j = await apiGet('ping'); el.textContent = `Servicio: ${j.service || 'ok'}`; }
-      catch{ el.textContent = 'Servicio no disponible'; }
-    }
-
-    async function fetchStats(){
-      const stTotal = $('#st_total'), stUsed = $('#st_used'), stPending = $('#st_pending');
-      $('#statusMsg').textContent = 'Cargando estadísticas…';
-      try{
-        const j = await apiGet('stats');
-        const d = j.data || {};
-        stTotal.textContent = d.tickets_total ?? '—';
-        stUsed.textContent = d.tickets_used ?? '—';
-        stPending.textContent = d.tickets_pending ?? '—';
-        $('#statusMsg').textContent = 'Listo';
-      }catch(e){
-        if(e.code==='UNAUTHORIZED' || e.message==='NO_TOKEN'){
-          $('#statusMsg').textContent = 'Sesión expirada. Vuelve a iniciar sesión.';
-          clearToken(); showLogin();
-        }else{
-          $('#statusMsg').textContent = 'No se pudieron cargar las estadísticas.';
-        }
-      }
-    }
-
-    async function doLogin(){
-      const msg = $('#loginMsg');
-      const u = $('#u').value.trim(), p = $('#p').value;
-      if(!u || !p){ msg.textContent = 'Completa usuario y contraseña'; return; }
-      setLoading(loginBtn, true); msg.textContent = 'Validando…';
-      try{
-        const j = await apiPost('login', { username:u, password:p });
-        setToken(j.token);
-        msg.textContent = '';
-        showApp();
-        await ping();
-        await fetchStats();
-      }catch(e){
-        msg.textContent = (e.raw?.message==='NO_TOKEN') ? 'Falta autorización (flujo de token).' : (e.message||'Usuario o contraseña incorrectos');
-      }finally{
-        setLoading(loginBtn, false);
-      }
-    }
-
-    async function scanTicket(){
-      const msg = $('#scanMsg');
-      const serial = $('#scanInput').value.trim();
-      if(!serial){ msg.textContent = 'Captura un serial'; return; }
-      setLoading(scanBtn, true); msg.textContent = 'Validando ticket…';
-      try{
-        const j = await apiPost('scan', { serial }); // ahora incluye token
-        const r = j.result || {};
-        msg.classList.toggle('msg--good', !!r.valid);
-        msg.classList.toggle('msg--bad', !r.valid);
-        msg.textContent = r.valid ? `✅ Ticket válido. Producto: ${r.product || '-'}` :
-                                    `❌ Ticket inválido${r.reason ? `: ${r.reason}` : ''}`;
-        await fetchStats();
-      }catch(e){
-        if(e.code==='UNAUTHORIZED' || e.message==='NO_TOKEN'){
-          msg.textContent = 'Sesión expirada. Inicia sesión nuevamente.';
-          clearToken(); showLogin();
-        }else{
-          msg.textContent = e.message || 'Error al escanear';
-        }
-      }finally{
-        setLoading(scanBtn, false);
-      }
-    }
-
-    function doLogout(){ clearToken(); showLogin(); }
-
-    /* ===== Wire-up ===== */
-    loginBtn.addEventListener('click', doLogin);
-    $('#u').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
-    $('#p').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
-    scanBtn.addEventListener('click', scanTicket);
-    $('#scanInput').addEventListener('keydown', e=>{ if(e.key==='Enter') scanTicket(); });
-    logoutBtn.addEventListener('click', doLogout);
-
-    /* ===== Arranque ===== */
-    (async function boot(){
-      if(getToken()){
-        showApp();
-        await ping();
-        await fetchStats();
-      }else{
-        showLogin();
-      }
-    })();
-  </script>
-</body>
+        <script src="app.js?v=0.4" defer></script>
+    </body>
 </html>
