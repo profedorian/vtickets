@@ -1,3 +1,4 @@
+/*v1*/
 /* ===== Helpers UI ===== */
 const $ = (s, r=document)=>r.querySelector(s);
 function setLoading(btn, on=true){

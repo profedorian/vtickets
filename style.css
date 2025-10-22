@@ -1,3 +1,4 @@
+/*v1*/
 :root{
 	/* Verde escolar */
 	--bg:#3E1E68;           /* fondo general claro */
@@ -169,9 +170,8 @@ header.app-header img{ width:36px; height:36px }
 /* El ojo ahora está dentro del flujo, no absoluto */
 .field__toggle{
   position: static !important;
-  /*width: 36px; height: 36px;*/
-  padding-top: 4px;
-  padding-bottom: 4px;
+  padding-top: 7px;
+  padding-bottom: 7px;
   flex-shrink: 0;                /* evita que se encoja */
   display: grid; place-items: center;
   border-radius: 10px;
