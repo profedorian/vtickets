@@ -196,11 +196,6 @@ header.app-header img{ width:36px; height:36px }
 .field__toggle:hover{ color: var(--txt); border-color:#3a4664 }
 .field__toggle:focus-visible{ outline:none; box-shadow: 0 0 0 4px var(--ring-weak); border-color: var(--ring); }
 
-/* Ajuste responsive: botón un poquito más chico en pantallas muy angostas */
-@media (max-width: 360px){
-  .field__toggle{ width: 32px; height: 32px; }
-}
-
 /* Autofill (Chrome) para evitar amarillo feo) */
 .field__input:-webkit-autofill{
   -webkit-text-fill-color: var(--txt) !important;
