@@ -78,7 +78,7 @@ header.app-header img{ width:36px; height:36px }
 .btn.is-loading .btn__spinner{ display:inline-block }
 @keyframes spin{ to{ transform:rotate(360deg) } }
 
-.msg{ min-height:1.25rem; font-size:.95rem }
+.msg{ min-height:1.25rem; font-size:.95rem; text-align: center; color: red; }
 .msg--good{ color:var(--good) }
 .msg--bad{ color:var(--bad) }
 
@@ -540,6 +540,32 @@ header.app-header img{ width:36px; height:36px }
 }
 .lead{ font-size: var(--fs-5); line-height: var(--lh-3); opacity: .9; }
 
+/* Oculto por defecto */
+.rotate-lock{
+  position: fixed; inset: 0;
+  display: none;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 24px;
+  background: rgba(11,59,46,.92); /* tu verde oscuro con transparencia */
+  color: #e6f0ea; z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+.rotate-lock__card{
+  max-width: 26rem;
+  padding: 20px 24px; border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+.rotate-lock__title{ font-size: 1.05rem; font-weight: 700; margin: 0 0 6px }
+.rotate-lock__text{ margin: 0; opacity: .9; }
+
+/* Mostrar overlay en orientación paisaje solo en pantallas “móviles” */
+@media (orientation: landscape) and (max-width: 900px){
+  .rotate-lock{ display: flex; }
+  /* opcional: impedir scroll del body detrás */
+  html, body{ overflow: hidden; }
+}
 
 
 
