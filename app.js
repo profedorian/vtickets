@@ -1,4 +1,4 @@
-/*v2*/
+/*v3*/
 /* ===== Helpers UI ===== */
 const $ = (s, r=document)=>r.querySelector(s);
 function setLoading(btn, on=true){
@@ -60,14 +60,15 @@ const scanBtn   = $('#scanBtn');
 const logoutBtn = $('#logoutBtn');
 const logoutBtnAdmin = $('#logoutBtnAdmin');
 
-function showView(name){
-  // name: 'login' | 'scan' | 'admin'
+function showView(viewName){
+  console.log("Comprobando vista: " + viewName);
+  
   loginView.classList.add('hidden');
   appView.classList.add('hidden');
   adminView.classList.add('hidden');
 
-  if(name === 'login') loginView.classList.remove('hidden');
-  else if(name === 'admin') adminView.classList.remove('hidden');
+  if(viewName === 'login') loginView.classList.remove('hidden');
+  else if(viewName === 'admin') adminView.classList.remove('hidden');
   else appView.classList.remove('hidden'); // 'scan'
 }
 
@@ -178,10 +179,12 @@ setTimeout(hideSplash, 1200);
 // 2) Cuando arranca tu app (boot), ocúltalo después de ping()
 async function bootGreen(){
   if(getToken()){
-    showView(getIsAdmin() ? 'admin' : 'scan');
-    await ping();
-    hideSplash();
-    await fetchStats();
+	let viewName = getIsAdmin() ? 'admin' : 'scan';
+	console.log("Comprobando vista: " + viewName);
+	showView(viewName);
+	await ping();
+	hideSplash();
+	await fetchStats();
   }else{
     hideSplash();
     showView('login');
