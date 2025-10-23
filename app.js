@@ -58,6 +58,7 @@ const adminView = $('#adminView');
 const loginBtn  = $('#loginBtn');
 const scanBtn   = $('#scanBtn');
 const logoutBtn = $('#logoutBtn');
+const logoutBtnAdmin = $('#logoutBtnAdmin');
 
 function showView(name){
   // name: 'login' | 'scan' | 'admin'
@@ -153,7 +154,11 @@ async function scanTicket(){
   }
 }
 
-function doLogout(){ clearToken(); showLogin(); }
+function doLogout(){
+  clearToken();
+  setIsAdmin(false);
+  showLogin();
+}
 
 /* ===== Wire-up ===== */
 loginBtn.addEventListener('click', doLogin);
@@ -162,6 +167,7 @@ $('#p').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
 scanBtn.addEventListener('click', scanTicket);
 $('#scanInput').addEventListener('keydown', e=>{ if(e.key==='Enter') scanTicket(); });
 logoutBtn.addEventListener('click', doLogout);
+logoutBtnAdmin.addEventListener('click', doLogout);
 
 /* ===== Arranque ===== */
 function hideSplash(){ const s = document.getElementById('splash'); if(s) s.classList.add('is-hidden'); }
