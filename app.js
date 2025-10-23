@@ -1,4 +1,4 @@
-/*v1*/
+/*v0.5*/
 /* ===== Helpers UI ===== */
 const $ = (s, r=document)=>r.querySelector(s);
 function setLoading(btn, on=true){
@@ -60,14 +60,15 @@ const scanBtn   = $('#scanBtn');
 const logoutBtn = $('#logoutBtn');
 const logoutBtnAdmin = $('#logoutBtnAdmin');
 
-function showView(name){
-  // name: 'login' | 'scan' | 'admin'
+function showView(viewName){
+  console.log("Comprobando vista: " + viewName);
+  
   loginView.classList.add('hidden');
   appView.classList.add('hidden');
   adminView.classList.add('hidden');
 
-  if(name === 'login') loginView.classList.remove('hidden');
-  else if(name === 'admin') adminView.classList.remove('hidden');
+  if(viewName === 'login') loginView.classList.remove('hidden');
+  else if(viewName === 'admin') adminView.classList.remove('hidden');
   else appView.classList.remove('hidden'); // 'scan'
 }
 
@@ -77,9 +78,9 @@ function showLogin(){
   $('#statusMsg') && ($('#statusMsg').textContent = 'Listo');
 }
 
-function showApp(){ // conserva este alias para 'scan'
+/*function showApp(){
   showView('scan');
-}
+}*/
 
 async function ping(){
   const el = $('#pingMsg');
@@ -99,7 +100,8 @@ async function fetchStats(){
 	stUsed.textContent = d.tickets_used ?? '—';
 	stPending.textContent = d.tickets_pending ?? '—';
 	$('#statusMsg').textContent = 'Listo';
-  }catch(e){
+  }
+  catch(e){
 	if(e.code==='UNAUTHORIZED' || e.message==='NO_TOKEN'){
 	  $('#statusMsg').textContent = 'Sesión expirada. Vuelve a iniciar sesión.';
 	  clearToken(); showLogin();
@@ -119,8 +121,7 @@ async function doLogin(){
 	setToken(j.token);
 	setIsAdmin(!!j.is_admin);
 	msg.textContent = '';
-	//---showView(getIsAdmin() ? 'admin' : 'scan');
-	//---showApp();
+	showView(getIsAdmin() ? 'admin' : 'scan');
 	await ping();
 	await fetchStats();
   }catch(e){
@@ -140,7 +141,7 @@ async function scanTicket(){
 	const r = j.result || {};
 	msg.classList.toggle('msg--good', !!r.valid);
 	msg.classList.toggle('msg--bad', !r.valid);
-	msg.textContent = r.valid ? `✅ Ticket válido. Producto: ${r.product || '-'}` : `❌ Ticket inválido${r.reason ? `: ${r.reason}` : ''}`;
+	msg.textContent = r.valid ? `Ticket válido. Producto: ${r.product || '-'}` : `Ticket inválido${r.reason ? `: ${r.reason}` : ''}`;
 	await fetchStats();
   }catch(e){
 	if(e.code==='UNAUTHORIZED' || e.message==='NO_TOKEN'){
@@ -178,10 +179,12 @@ setTimeout(hideSplash, 1200);
 // 2) Cuando arranca tu app (boot), ocúltalo después de ping()
 async function bootGreen(){
   if(getToken()){
-    showView(getIsAdmin() ? 'admin' : 'scan');
-    await ping();
-    hideSplash();
-    await fetchStats();
+	let viewName = getIsAdmin() ? 'admin' : 'scan';
+	console.log("Comprobando vista: " + viewName);
+	showView(viewName);
+	await ping();
+	hideSplash();
+	await fetchStats();
   }else{
     hideSplash();
     showView('login');
