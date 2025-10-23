@@ -119,8 +119,8 @@ async function doLogin(){
 	setToken(j.token);
 	setIsAdmin(!!j.is_admin);
 	msg.textContent = '';
-	//---showView(getIsAdmin() ? 'admin' : 'scan');
-	//---showApp();
+	showView(getIsAdmin() ? 'admin' : 'scan');
+	showApp();
 	await ping();
 	await fetchStats();
   }catch(e){
