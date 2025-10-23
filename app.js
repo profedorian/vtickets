@@ -1,4 +1,4 @@
-/*v1*/
+/*v2*/
 /* ===== Helpers UI ===== */
 const $ = (s, r=document)=>r.querySelector(s);
 function setLoading(btn, on=true){
@@ -119,8 +119,8 @@ async function doLogin(){
 	setToken(j.token);
 	setIsAdmin(!!j.is_admin);
 	msg.textContent = '';
-	showView(getIsAdmin() ? 'admin' : 'scan');
-	showApp();
+	//---showView(getIsAdmin() ? 'admin' : 'scan');
+	//---showApp();
 	await ping();
 	await fetchStats();
   }catch(e){
