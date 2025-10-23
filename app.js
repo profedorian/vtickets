@@ -1,4 +1,4 @@
-/*v3*/
+/*v0.5*/
 /* ===== Helpers UI ===== */
 const $ = (s, r=document)=>r.querySelector(s);
 function setLoading(btn, on=true){
@@ -100,7 +100,8 @@ async function fetchStats(){
 	stUsed.textContent = d.tickets_used ?? '—';
 	stPending.textContent = d.tickets_pending ?? '—';
 	$('#statusMsg').textContent = 'Listo';
-  }catch(e){
+  }
+  catch(e){
 	if(e.code==='UNAUTHORIZED' || e.message==='NO_TOKEN'){
 	  $('#statusMsg').textContent = 'Sesión expirada. Vuelve a iniciar sesión.';
 	  clearToken(); showLogin();
@@ -121,7 +122,6 @@ async function doLogin(){
 	setIsAdmin(!!j.is_admin);
 	msg.textContent = '';
 	showView(getIsAdmin() ? 'admin' : 'scan');
-	//showApp();
 	await ping();
 	await fetchStats();
   }catch(e){
@@ -141,7 +141,7 @@ async function scanTicket(){
 	const r = j.result || {};
 	msg.classList.toggle('msg--good', !!r.valid);
 	msg.classList.toggle('msg--bad', !r.valid);
-	msg.textContent = r.valid ? `✅ Ticket válido. Producto: ${r.product || '-'}` : `❌ Ticket inválido${r.reason ? `: ${r.reason}` : ''}`;
+	msg.textContent = r.valid ? `Ticket válido. Producto: ${r.product || '-'}` : `Ticket inválido${r.reason ? `: ${r.reason}` : ''}`;
 	await fetchStats();
   }catch(e){
 	if(e.code==='UNAUTHORIZED' || e.message==='NO_TOKEN'){
