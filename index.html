@@ -81,7 +81,7 @@
             </section>
 
             <!-- ============ APP VIEW ============ -->
-            <div id="appView" class="card hidden">
+            <div id="appView" class="card hidden" role="region" aria-label="Scanner">
                 <header id="appHeader" class="app-header">
                     <img src="logo.png" alt="logo" onerror="this.style.display='none'" />
                     <div>
@@ -133,6 +133,32 @@
 
                 <div class="footer">© VTickets 2025 • <span class="muted">v1</span></div>
             </div>
+			
+			<!-- ============ ADMIN VIEW ============ -->
+			<div id="adminView" class="card hidden" role="region" aria-label="Administración">
+			  <header class="app-header">
+				<img src="logo.png" alt="logo" onerror="this.style.display='none'" />
+				<div>
+				  <div class="title">VTickets — Administración</div>
+				  <div class="muted">Crear/activar eventos y generar tickets</div>
+				</div>
+				<div style="margin-left:auto;">
+				  <button id="logoutBtnAdmin" class="btn btn--ghost">Salir</button>
+				</div>
+			  </header>
+
+			  <div class="grid">
+				<div class="span-12 stat">
+				  <div class="label">Atajos</div>
+				  <div class="row" style="margin-top:8px; gap:8px;">
+					<button id="btnAdminCreateEvent" class="btn">Crear evento</button>
+					<button id="btnAdminCreateTickets" class="btn">Crear tickets</button>
+				  </div>
+				  <div class="muted" style="margin-top:8px">Placeholder: luego conectamos a tus endpoints.</div>
+				</div>
+			  </div>
+			</div>
+
         </div>
 
 		<div class="rotate-lock" aria-hidden="true">

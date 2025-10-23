@@ -13,7 +13,10 @@ const BASE = 'https://script.google.com/macros/s/AKfycbxEuW5orH9hSyljDjjRQdgazNq
 const qs = o => new URLSearchParams(o);              /* ← una sola vez */
 const getToken = () => localStorage.getItem('vk_token') || '';
 const setToken = t => localStorage.setItem('vk_token', t);
-const clearToken = () => localStorage.removeItem('vk_token'); /* ← faltaba */
+const clearToken = () => localStorage.removeItem('vk_token');
+// === Rol simple en localStorage ===
+const setIsAdmin = v => localStorage.setItem('vk_is_admin', v ? '1' : '0');
+const getIsAdmin = () => localStorage.getItem('vk_is_admin') === '1';
 
 async function withTimeout(executor, ms=15000){
   const ac = new AbortController();
@@ -51,20 +54,30 @@ async function apiPost(path, data={}){
 /* ===== App logic ===== */
 const loginView = $('#loginView');
 const appView   = $('#appView');
+const adminView = $('#adminView');
 const loginBtn  = $('#loginBtn');
 const scanBtn   = $('#scanBtn');
 const logoutBtn = $('#logoutBtn');
 
-function showLogin(){
-  loginView.classList.remove('hidden');
+function showView(name){
+  // name: 'login' | 'scan' | 'admin'
+  loginView.classList.add('hidden');
   appView.classList.add('hidden');
+  adminView.classList.add('hidden');
+
+  if(name === 'login') loginView.classList.remove('hidden');
+  else if(name === 'admin') adminView.classList.remove('hidden');
+  else appView.classList.remove('hidden'); // 'scan'
+}
+
+function showLogin(){
+  showView('login');
   $('#loginMsg').textContent = '';
   $('#statusMsg') && ($('#statusMsg').textContent = 'Listo');
 }
 
-function showApp(){
-  loginView.classList.add('hidden');
-  appView.classList.remove('hidden');
+function showApp(){ // conserva este alias para 'scan'
+  showView('scan');
 }
 
 async function ping(){
@@ -103,7 +116,9 @@ async function doLogin(){
   try{
 	const j = await apiPost('login', { username:u, password:p });
 	setToken(j.token);
+	setIsAdmin(!!j.is_admin);
 	msg.textContent = '';
+	showView(getIsAdmin() ? 'admin' : 'scan');
 	showApp();
 	await ping();
 	await fetchStats();
@@ -157,15 +172,16 @@ setTimeout(hideSplash, 1200);
 // 2) Cuando arranca tu app (boot), ocúltalo después de ping()
 async function bootGreen(){
   if(getToken()){
-    showApp();
-    await ping(); // si ya tienes esta función
+    showView(getIsAdmin() ? 'admin' : 'scan');
+    await ping();
     hideSplash();
     await fetchStats();
   }else{
     hideSplash();
-    showLogin();
+    showView('login');
   }
 }
+
 // reemplaza tu IIFE de arranque por:
 bootGreen();
 
@@ -200,5 +216,4 @@ bootGreen();
     obs.observe(input, { attributes: true, attributeFilter: ['type'] });
   });
 })();
-
 
