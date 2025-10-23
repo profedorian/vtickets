@@ -77,9 +77,9 @@ function showLogin(){
   $('#statusMsg') && ($('#statusMsg').textContent = 'Listo');
 }
 
-function showApp(){ // conserva este alias para 'scan'
+/*function showApp(){
   showView('scan');
-}
+}*/
 
 async function ping(){
   const el = $('#pingMsg');
@@ -120,7 +120,7 @@ async function doLogin(){
 	setIsAdmin(!!j.is_admin);
 	msg.textContent = '';
 	showView(getIsAdmin() ? 'admin' : 'scan');
-	showApp();
+	//showApp();
 	await ping();
 	await fetchStats();
   }catch(e){
