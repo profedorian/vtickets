@@ -52,6 +52,7 @@ async function apiPost(path, data={}){
 }
 
 /* ===== App logic ===== */
+const appLogo = $('.app-logo');
 const loginView = $('#loginView');
 const appView   = $('#appView');
 const adminView = $('#adminView');
@@ -166,6 +167,8 @@ function doLogout(){
 }
 
 /* ===== Wire-up ===== */
+appLogo.addEventListener('click', e=>{ window.location.href = '/vtickets/index.html'; });
+
 loginBtn.addEventListener('click', doLogin);
 $('#u').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
 $('#p').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });

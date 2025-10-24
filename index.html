@@ -82,19 +82,19 @@
             </section>
 
             <!-- ============ APP VIEW ============ -->
-            <div id="appView" class="card hidden" role="region" aria-label="Scanner">
-                <header id="appHeader" class="app-header">
-                    <img src="logo.png" alt="logo" onerror="this.style.display='none'" />
+            <div id="appView" class="card hidden rounded-0" role="region" aria-label="Scanner">
+                <header class="app-header mb-1 border-bottom">
+                    <img class="app-logo" src="logo.png" alt="logo" onerror="this.style.display='none'" />
                     <div>
                         <div class="title">VTickets</div>
                         <div id="pingMsg" class="muted">Comprobando servicio…</div>
                     </div>
                     <div style="margin-left: auto;">
-                        <button id="logoutBtn" class="btn btn--ghost">Salir</button>
+                        <button id="logoutBtn" class="btn btn-primary">Salir</button>
                     </div>
                 </header>
 
-                <div class="grid" style="margin-bottom: 10px;">
+                <div class="grid visually-hidden" style="margin-bottom: 10px;">
                     <div class="span-12 stat">
                         <div class="label">Estado</div>
                         <div id="statusMsg" class="value">Listo</div>
@@ -102,53 +102,41 @@
                 </div>
 
                 <div class="grid">
-                    <div class="span-12 stat">
-                        <div class="label">Escaneo</div>
-                        <div class="row" style="margin-top: 8px; gap: 8px;">
-                            <!-- <input id="scanInput" class="input" placeholder="Serial del ticket" /> -->
-                            <!-- <button id="scanBtn" class="btn"> -->
-                                <!-- <span class="btn__label">Escanear</span> -->
-                                <!-- <span class="btn__spinner" aria-hidden="true"></span> -->
-                            <!-- </button> -->
-							<div class="container my-3">
-							  <h3>Escanear QR</h3>
-							  <div class="d-flex gap-2 mb-2">
-								<button id="btnStart" class="btn btn-primary">Iniciar cámara</button>
-								<button id="btnStop" class="btn btn-secondary" disabled>Detener</button>
+                    <div class="span-12">
+                        <div class="row" style="gap: 8px;">
+							<div class="col my-0">
+							  <div class="d-flex pb-2 mb-2 border-bottom justify-content-center">
+								<div class="col stat p-1 text-center">
+									<div class="label">Tickets</div>
+									<div id="st_total" class="value">—</div>
+								</div>
+								<div class="col stat p-1 text-center">
+									<div class="label">Usados</div>
+									<div id="st_used" class="value">—</div>
+								</div>
+								<div class="col stat p-1 text-center">
+									<div class="label">Pendientes</div>
+									<div id="st_pending" class="value">—</div>
+								</div>
 							  </div>
-							  <video id="video" playsinline style="width:100%;max-width:420px;border:1px solid #ddd;border-radius:8px;"></video>
-							  <p id="status" class="mt-2 text-muted">Listo para escanear…</p>
+								<span id="status" class="h3 m-auto visually-hidden">Listo para escanear</span>
+							  <div class="d-flex flex-row">
+								<button id="btnStart" class="btn btn-lg" style="width:100%;max-width:420px; height:100px; border:1px solid #ddd;border-radius:8px;">[Scanear Ticket]</button>
+								<button id="btnStop" class="btn btn-secondary visually-hidden" disabled>Detener</button>
+							  </div>
+							  <video class="visually-hidden" id="video" playsinline style="width:100%;max-width:420px;border:1px solid #ddd;border-radius:8px;"></video>
 							</div>
 
                         </div>
                         <div id="scanMsg" class="msg" style="margin-top: 8px;"></div>
                     </div>
-
-                    <div class="span-12">
-                        <div class="grid">
-                            <div class="span-4 stat">
-                                <div class="label">Tickets totales</div>
-                                <div id="st_total" class="value">—</div>
-                            </div>
-                            <div class="span-4 stat">
-                                <div class="label">Usados</div>
-                                <div id="st_used" class="value">—</div>
-                            </div>
-                            <div class="span-4 stat">
-                                <div class="label">Pendientes</div>
-                                <div id="st_pending" class="value">—</div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
-
-                <div class="footer">© VTickets 2025 • <span class="muted">v1</span></div>
             </div>
 			
 			<!-- ============ ADMIN VIEW ============ -->
 			<div id="adminView" class="card hidden" role="region" aria-label="Administración">
-			  <header class="app-header">
-				<img src="logo.png" alt="logo" onerror="this.style.display='none'" />
+			  <header class="app-header mb-1">
+				<img class="app-logo" src="logo.png" alt="logo" onerror="this.style.display='none'" />
 				<div>
 				  <div class="title">VTickets — Administración</div>
 				  <div class="muted">Crear/activar eventos y generar tickets</div>
