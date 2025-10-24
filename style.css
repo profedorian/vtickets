@@ -567,7 +567,65 @@ header.app-header img{ width:36px; height:36px }
   html, body{ overflow: hidden; }
 }
 
+/* ======== VISTA ADMIN ====== */
+.admin-container {
+  width: 100%;
+  margin: 0 auto;
+}
 
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  text-align: left;
+  padding: 0.6rem;
+  border-bottom: 1px solid #ddd;
+}
+
+thead {
+  background-color: #0b3b2e;
+  color: white;
+}
+
+tbody tr:hover {
+  background-color: #dee1e0;
+  color: #000;
+}
+
+.btn {
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btn-sm { font-size: 0.8rem; padding: 0.3rem 0.6rem; }
+
+.btn-primary { background: #3a7f45; color: white; }
+.btn-danger { background: #c0392b; color: white; }
+.btn-warning { background: #f39c12; color: white; }
+.btn-secondary { background: #777; color: white; }
+
+.tickets-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: .5rem;
+}
+
+.hidden { display: none; }
+
+/* Mobile */
+@media (max-width: 700px) {
+  th:nth-child(3), td:nth-child(3),
+  th:nth-child(4), td:nth-child(4) {
+    display: none;
+  }
+  .btn { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+}
 
 
 

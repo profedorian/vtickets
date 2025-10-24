@@ -56,19 +56,27 @@ const loginView = $('#loginView');
 const appView   = $('#appView');
 const adminView = $('#adminView');
 const loginBtn  = $('#loginBtn');
-const scanBtn   = $('#scanBtn');
+//const scanBtn   = $('#scanBtn');
 const logoutBtn = $('#logoutBtn');
 const logoutBtnAdmin = $('#logoutBtnAdmin');
+const animaBackground = $('#anima-bg');
 
 function showView(viewName){
   console.log("Comprobando vista: " + viewName);
+  //ocultar el fondo animado
+  animaBackground.classList.add('hidden');
   
   loginView.classList.add('hidden');
   appView.classList.add('hidden');
   adminView.classList.add('hidden');
-
-  if(viewName === 'login') loginView.classList.remove('hidden');
-  else if(viewName === 'admin') adminView.classList.remove('hidden');
+  
+  if(viewName === 'login') {
+	  loginView.classList.remove('hidden');
+	  //volver a mostrar el fondo animado
+	  animaBackground.classList.remove('hidden');
+  }
+  else if(viewName === 'admin') 
+	  adminView.classList.remove('hidden');
   else appView.classList.remove('hidden'); // 'scan'
 }
 
@@ -77,10 +85,6 @@ function showLogin(){
   $('#loginMsg').textContent = '';
   $('#statusMsg') && ($('#statusMsg').textContent = 'Listo');
 }
-
-/*function showApp(){
-  showView('scan');
-}*/
 
 async function ping(){
   const el = $('#pingMsg');
@@ -135,7 +139,7 @@ async function scanTicket(){
   const msg = $('#scanMsg');
   const serial = $('#scanInput').value.trim();
   if(!serial){ msg.textContent = 'Captura un serial'; return; }
-  setLoading(scanBtn, true); msg.textContent = 'Validando ticket…';
+  //setLoading(scanBtn, true); msg.textContent = 'Validando ticket…';
   try{
 	const j = await apiPost('scan', { serial }); // ahora incluye token
 	const r = j.result || {};
@@ -151,7 +155,7 @@ async function scanTicket(){
 	  msg.textContent = e.message || 'Error al escanear';
 	}
   }finally{
-	setLoading(scanBtn, false);
+	//setLoading(scanBtn, false);
   }
 }
 
@@ -165,8 +169,8 @@ function doLogout(){
 loginBtn.addEventListener('click', doLogin);
 $('#u').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
 $('#p').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
-scanBtn.addEventListener('click', scanTicket);
-$('#scanInput').addEventListener('keydown', e=>{ if(e.key==='Enter') scanTicket(); });
+//scanBtn.addEventListener('click', scanTicket);
+//$('#scanInput').addEventListener('keydown', e=>{ if(e.key==='Enter') scanTicket(); });
 logoutBtn.addEventListener('click', doLogout);
 logoutBtnAdmin.addEventListener('click', doLogout);
 
@@ -225,4 +229,171 @@ bootGreen();
     obs.observe(input, { attributes: true, attributeFilter: ['type'] });
   });
 })();
+
+
+//======== eventos 
+// Simulación inicial (después se llenará desde App Script)
+const events = [
+  { event: 'KERMES2025_28OCT', date_event: '2025-10-28', total_tickets: 50, tickets_changes: 15, status: 'CERRADO' },
+  { event: 'KERMES2025_29NOV', date_event: '2025-11-29', total_tickets: 20, tickets_changes: 0, status: 'PENDIENTE' },
+];
+
+function renderEvents() {
+  const body = document.getElementById('eventsBody');
+  body.innerHTML = events.map(e => {
+    const now = new Date();
+    const eventDate = new Date(e.date_event);
+    const diffDays = Math.ceil((eventDate - now) / (1000 * 60 * 60 * 24));
+
+    const canOpen = diffDays <= 1 && diffDays >= 0;
+    const canClose = diffDays < 0 && e.status === 'ABIERTO';
+
+    return `
+      <tr>
+        <td>${e.event}</td>
+        <td>${e.date_event}</td>
+        <td>${e.total_tickets}</td>
+        <td>${e.tickets_changes}</td>
+        <td>${e.status}</td>
+        <td>
+          <button class="btn btn-sm btn-primary" onclick="showTickets('${e.event}')">Tickets</button>
+          <button class="btn btn-sm btn-warning" ${!canOpen && !canClose ? 'disabled' : ''} 
+            onclick="toggleEvent('${e.event}')">
+            ${e.status === 'ABIERTO' ? 'Cerrar' : 'Abrir'}
+          </button>
+          <button class="btn btn-sm btn-danger" onclick="deleteEvent('${e.event}')">Borrar</button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function showTickets(eventName) {
+  document.getElementById('ticketsTitle').textContent = `Tickets del evento: ${eventName}`;
+  document.getElementById('ticketsPanel').classList.remove('hidden');
+  document.getElementById('tblEvents').parentElement.classList.add('hidden');
+}
+
+function toggleEvent(eventName) {
+  alert(`Abrir/Cerrar evento: ${eventName}`);
+}
+
+function deleteEvent(eventName) {
+  const choice = confirm(`¿Deseas borrar solo los tickets o el evento completo?\n\nAceptar = Tickets\nCancelar = Evento completo`);
+  alert(choice ? `Borrando tickets de ${eventName}` : `Borrando evento ${eventName}`);
+}
+
+document.getElementById('btnBackEvents').onclick = () => {
+  document.getElementById('ticketsPanel').classList.add('hidden');
+  document.getElementById('tblEvents').parentElement.classList.remove('hidden');
+};
+
+renderEvents();
+
+// --- generar tickets ---
+/*const res = await fetch(GAS_URL + '?path=tickets.generate', {
+  method: 'POST',
+  headers: {'Content-Type':'application/json'},
+  body: JSON.stringify({
+    event: 'KERMES2025_28OCT',
+    product: 'GENERAL',
+    count: 100,
+    expiration_date: '2025-10-28'
+  })
+});
+const data = await res.json();*/
+
+
+// --- scan camera
+const video = document.getElementById('video');
+const btnStart = document.getElementById('btnStart');
+const btnStop  = document.getElementById('btnStop');
+const statusEl = document.getElementById('status');
+
+let stream = null;
+let rafId = null;
+let running = false;
+let detector = ('BarcodeDetector' in window) ? new BarcodeDetector({formats:['qr_code']}) : null;
+let zxingReader = null;
+
+async function startCamera(){
+  if(running) return;
+  statusEl.textContent = 'Solicitando cámara…';
+  stream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: 'environment' } , width: {ideal:1280}, height:{ideal:720} },
+    audio: false
+  });
+  video.srcObject = stream;
+  await video.play();
+  running = true;
+  btnStart.disabled = true;
+  btnStop.disabled  = false;
+  statusEl.textContent = detector ? 'Escaneando con detector nativo…' : 'Escaneando con ZXing…';
+  loop();
+}
+
+function stopCamera(){
+  running = false;
+  btnStart.disabled = false;
+  btnStop.disabled = true;
+  cancelAnimationFrame(rafId);
+  if(stream){
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+  video.srcObject = null;
+  statusEl.textContent = 'Cámara detenida.';
+}
+
+async function loop(){
+  if(!running) return;
+  try{
+    if(detector){
+      const barcodes = await detector.detect(video);
+      if(barcodes.length){
+        const serial = barcodes[0].rawValue.trim();
+        onScan(serial);
+        return;
+      }
+    }else{
+      // Fallback dinámico a ZXing
+      if(!zxingReader){
+        const { BrowserMultiFormatReader } = await import('https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/esm5/index.min.js');
+        zxingReader = new BrowserMultiFormatReader();
+        await zxingReader.decodeFromVideoDevice(null, video, (res, err) => {
+          if(res && running){
+            onScan(res.getText().trim());
+          }
+        });
+      }
+    }
+  }catch(e){
+    // ignorar errores transitorios
+  }
+  rafId = requestAnimationFrame(loop);
+}
+
+async function onScan(serial){
+  stopCamera();
+  statusEl.textContent = `QR detectado: ${serial}. Validando…`;
+
+  try{
+    const url = GAS_URL + `?path=validate&serial=${encodeURIComponent(serial)}`;
+    const r = await fetch(url, {headers:{'Content-Type':'application/json'}});
+    const data = await r.json();
+    if(data.ok){
+      statusEl.textContent = '✅ Ticket válido';
+    }else{
+      statusEl.textContent = `❌ Inválido: ${data.code || data.error || 'unknown'}`;
+    }
+  }catch(err){
+    statusEl.textContent = '⚠️ Error al validar';
+  }
+}
+
+btnStart.onclick = startCamera;
+btnStop.onclick  = stopCamera;
+
+
+
+
 
