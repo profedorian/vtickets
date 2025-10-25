@@ -290,20 +290,6 @@ document.getElementById('btnBackEvents').onclick = () => {
 
 renderEvents();
 
-// --- generar tickets ---
-/*const res = await fetch(GAS_URL + '?path=tickets.generate', {
-  method: 'POST',
-  headers: {'Content-Type':'application/json'},
-  body: JSON.stringify({
-    event: 'KERMES2025_28OCT',
-    product: 'GENERAL',
-    count: 100,
-    expiration_date: '2025-10-28'
-  })
-});
-const data = await res.json();*/
-
-
 // --- scan camera
 const video = document.getElementById('video');
 const btnStart = document.getElementById('btnStart');
@@ -403,6 +389,7 @@ async function onScan(serial){
 
 btnStart.onclick = startCamera;
 btnStop.onclick  = stopCamera;
+
 
 
 
