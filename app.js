@@ -1,4 +1,4 @@
-/*v0.5*/
+/*v0.6*/
 /* ===== Helpers UI ===== */
 const $ = (s, r=document)=>r.querySelector(s);
 function setLoading(btn, on=true){
@@ -290,6 +290,24 @@ document.getElementById('btnBackEvents').onclick = () => {
 
 renderEvents();
 
+// --- generar tickets ---
+// function CrearTicket(){
+	// const res = await fetch(GAS_URL + '?path=tickets.generate', {
+	  // method: 'POST',
+	  // headers: {'Content-Type':'application/json'},
+	  // body: JSON.stringify({
+		// event: 'KERMES2025_28OCT',
+		// product: 'GENERAL',
+		// count: 100,
+		// expiration_date: '2025-10-28'
+	  // })
+	// });
+	// const data = await res.json();
+// }
+//const btnPrueba = document.getElementById('Prueba');
+//btnPrueba.onclick = CrearTicket;
+
+
 // --- scan camera
 const video = document.getElementById('video');
 const btnStart = document.getElementById('btnStart');
@@ -389,8 +407,6 @@ async function onScan(serial){
 
 btnStart.onclick = startCamera;
 btnStop.onclick  = stopCamera;
-
-
 
 
 
