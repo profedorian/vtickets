@@ -63,7 +63,6 @@ const logoutBtnAdmin = $('#logoutBtnAdmin');
 const animaBackground = $('#anima-bg');
 
 function showView(viewName){
-  console.log("Comprobando vista: " + viewName);
   //ocultar el fondo animado
   animaBackground.classList.add('hidden');
   
@@ -187,7 +186,6 @@ setTimeout(hideSplash, 1200);
 async function bootGreen(){
   if(getToken()){
 	let viewName = getIsAdmin() ? 'admin' : 'scan';
-	console.log("Comprobando vista: " + viewName);
 	showView(viewName);
 	await ping();
 	hideSplash();
@@ -320,16 +318,23 @@ let zxingReader = null;
 
 async function startCamera(){
   if(running) return;
+  btnStart.disabled = true;
+  btnStop.disabled  = false;
+  btnStart.classList.add('visually-hidden');
+  btnStop.classList.remove('visually-hidden');
+  video.classList.remove('visually-hidden');
+  
   statusEl.textContent = 'Solicitando cámara…';
   stream = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: { ideal: 'environment' } , width: {ideal:1280}, height:{ideal:720} },
+    video: { 
+		facingMode: {ideal: 'environment'}, width: {ideal:1280}, height:{ideal:720} 
+	},
     audio: false
   });
   video.srcObject = stream;
   await video.play();
   running = true;
-  btnStart.disabled = true;
-  btnStop.disabled  = false;
+  
   statusEl.textContent = detector ? 'Escaneando con detector nativo…' : 'Escaneando con ZXing…';
   loop();
 }
@@ -337,7 +342,9 @@ async function startCamera(){
 function stopCamera(){
   running = false;
   btnStart.disabled = false;
+  btnStart.classList.remove('visually-hidden');
   btnStop.disabled = true;
+  btnStop.classList.add('visually-hidden');
   cancelAnimationFrame(rafId);
   if(stream){
     stream.getTracks().forEach(t => t.stop());
@@ -345,6 +352,7 @@ function stopCamera(){
   }
   video.srcObject = null;
   statusEl.textContent = 'Cámara detenida.';
+  video.classList.add('visually-hidden');
 }
 
 async function loop(){
