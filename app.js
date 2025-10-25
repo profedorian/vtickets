@@ -135,29 +135,6 @@ async function doLogin(){
   }
 }
 
-async function scanTicket(){
-  const msg = $('#scanMsg');
-  const serial = $('#scanInput').value.trim();
-  if(!serial){ msg.textContent = 'Captura un serial'; return; }
-  //setLoading(scanBtn, true); msg.textContent = 'Validando ticket…';
-  try{
-	const j = await apiPost('scan', { serial }); // ahora incluye token
-	const r = j.result || {};
-	msg.classList.toggle('msg--good', !!r.valid);
-	msg.classList.toggle('msg--bad', !r.valid);
-	msg.textContent = r.valid ? `Ticket válido. Producto: ${r.product || '-'}` : `Ticket inválido${r.reason ? `: ${r.reason}` : ''}`;
-	await fetchStats();
-  }catch(e){
-	if(e.code==='UNAUTHORIZED' || e.message==='NO_TOKEN'){
-	  msg.textContent = 'Sesión expirada. Inicia sesión nuevamente.';
-	  clearToken(); showLogin();
-	}else{
-	  msg.textContent = e.message || 'Error al escanear';
-	}
-  }finally{
-	//setLoading(scanBtn, false);
-  }
-}
 
 function doLogout(){
   clearToken();
@@ -307,107 +284,304 @@ renderEvents();
 //const btnPrueba = document.getElementById('Prueba');
 //btnPrueba.onclick = CrearTicket;
 
-
-// --- scan camera
-const video = document.getElementById('video');
-const btnStart = document.getElementById('btnStart');
-const btnStop  = document.getElementById('btnStop');
-const statusEl = document.getElementById('status');
-
-let stream = null;
-let rafId = null;
-let running = false;
-let detector = ('BarcodeDetector' in window) ? new BarcodeDetector({formats:['qr_code']}) : null;
-let zxingReader = null;
-
 async function startCamera(){
-  if(running) return;
+  if (running) return;
+
+  // UI: estado de escaneo
   btnStart.disabled = true;
   btnStop.disabled  = false;
   btnStart.classList.add('visually-hidden');
   btnStop.classList.remove('visually-hidden');
   video.classList.remove('visually-hidden');
-  
+
+  // Estado y limpieza visual
+  statusEl.classList.remove('visually-hidden');
   statusEl.textContent = 'Solicitando cámara…';
+  const msg = document.getElementById('scanMsg');
+  if (msg) msg.innerHTML = '';
+
+  // Reinicia flags de flujo
+  processing = false;
+  lastSerial = null;
+
+  // Si ZXing quedó activo de una sesión anterior, resétalo
+  try { zxingReader?.reset?.(); } catch(e){}
+
+  // Abrir cámara
   stream = await navigator.mediaDevices.getUserMedia({
-    video: { 
-		facingMode: {ideal: 'environment'}, width: {ideal:1280}, height:{ideal:720} 
-	},
+    video: { facingMode: { ideal: 'environment' }, width: { ideal:1280 }, height:{ ideal:720 } },
     audio: false
   });
   video.srcObject = stream;
   await video.play();
   running = true;
-  
+
+  // Mensaje según método de detección
   statusEl.textContent = detector ? 'Escaneando con detector nativo…' : 'Escaneando con ZXing…';
-  loop();
+
+  // Iniciar bucle
+  rafId = requestAnimationFrame(loop);
 }
 
 function stopCamera(){
+  // Estado general → IDLE
   running = false;
+
   btnStart.disabled = false;
   btnStart.classList.remove('visually-hidden');
+
   btnStop.disabled = true;
   btnStop.classList.add('visually-hidden');
-  cancelAnimationFrame(rafId);
-  if(stream){
-    stream.getTracks().forEach(t => t.stop());
-    stream = null;
-  }
+
+  // Detener RAF
+  try { cancelAnimationFrame(rafId); } catch(e){}
+  rafId = null;
+
+  // Detener ZXing si estaba activo
+  try { zxingReader?.reset?.(); } catch(e){}
+
+  // Cerrar stream
+  try {
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+  } catch(e){}
+
   video.srcObject = null;
-  statusEl.textContent = 'Cámara detenida.';
   video.classList.add('visually-hidden');
+
+  // Mensajes
+  statusEl.textContent = 'Cámara detenida.';
+  statusEl.classList.add('visually-hidden');
+
+  const msg = document.getElementById('scanMsg');
+  if (msg) msg.innerHTML = '';
 }
 
 async function loop(){
-  if(!running) return;
+  if (!running) return;
+
   try{
-    if(detector){
+    if (detector){
+      // --- Detección con BarcodeDetector (nativo)
       const barcodes = await detector.detect(video);
-      if(barcodes.length){
-        const serial = barcodes[0].rawValue.trim();
-        onScan(serial);
-        return;
+      if (barcodes.length){
+        const serial = (barcodes[0].rawValue || '').trim();
+        if (serial && !processing){
+          // Pausar cámara SIN volver a idle: ocultar video y Stop, mantener Start oculto
+          running = false;
+          try { cancelAnimationFrame(rafId); } catch(e){}
+          rafId = null;
+
+          try {
+            if (stream) {
+              stream.getTracks().forEach(t => t.stop());
+              stream = null;
+            }
+          } catch(e){}
+          video.srcObject = null;
+          video.classList.add('visually-hidden');
+
+          btnStop.classList.add('visually-hidden');   // ocultamos "Detener" durante validación
+          btnStart.classList.add('visually-hidden');  // seguimos sin mostrar "Scanear"
+
+          // Feedback inmediato
+          statusEl.classList.remove('visually-hidden');
+          statusEl.textContent = `QR detectado: ${serial}. Validando…`;
+
+          // Disparar validación (no await necesario, pero puedes usar await si prefieres)
+          onScan(serial);
+          return; // no seguir el loop hasta reanudar escaneo
+        }
       }
-    }else{
-      // Fallback dinámico a ZXing
-      if(!zxingReader){
+    } else {
+      // --- Fallback dinámico a ZXing
+      if (!zxingReader){
         const { BrowserMultiFormatReader } = await import('https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/esm5/index.min.js');
         zxingReader = new BrowserMultiFormatReader();
         await zxingReader.decodeFromVideoDevice(null, video, (res, err) => {
-          if(res && running){
-            onScan(res.getText().trim());
+          if (res && running && !processing){
+            const serial = (res.getText() || '').trim();
+            if (serial){
+              // Pausar cámara como en el caso nativo
+              running = false;
+              try { cancelAnimationFrame(rafId); } catch(e){}
+              rafId = null;
+
+              try {
+                zxingReader?.reset?.();
+              } catch(e){}
+              try {
+                if (stream) {
+                  stream.getTracks().forEach(t => t.stop());
+                  stream = null;
+                }
+              } catch(e){}
+              video.srcObject = null;
+              video.classList.add('visually-hidden');
+
+              btnStop.classList.add('visually-hidden');
+              btnStart.classList.add('visually-hidden');
+
+              statusEl.classList.remove('visually-hidden');
+              statusEl.textContent = `QR detectado: ${serial}. Validando…`;
+
+              onScan(serial);
+            }
           }
         });
       }
     }
-  }catch(e){
-    // ignorar errores transitorios
+  } catch(e){
+    // Errores transitorios del detector: ignorar
   }
-  rafId = requestAnimationFrame(loop);
+
+  // Siguiente frame mientras seguimos escaneando
+  if (running) rafId = requestAnimationFrame(loop);
 }
+
 
 async function onScan(serial){
-  stopCamera();
-  statusEl.textContent = `QR detectado: ${serial}. Validando…`;
+  if (processing) return;
+  processing = true;
+  lastSerial = serial;
 
-  try{
-    const url = GAS_URL + `?path=validate&serial=${encodeURIComponent(serial)}`;
-    const r = await fetch(url, {headers:{'Content-Type':'application/json'}});
-    const data = await r.json();
-    if(data.ok){
-      statusEl.textContent = '✅ Ticket válido';
-    }else{
-      statusEl.textContent = `❌ Inválido: ${data.code || data.error || 'unknown'}`;
+  // Oculta cámara para dar espacio
+  pauseCameraUI();
+
+  const msg = document.getElementById('scanMsg');
+  statusEl.classList.remove('visually-hidden');
+  statusEl.textContent = `QR detectado: ${serial}. Validando…`;
+  msg.innerHTML = '';
+
+  try {
+    // Usa tu helper (sin preflight) con la misma BASE ya configurada
+    const data = await apiGet('validate', { serial });
+
+    if (!data || !data.ok) {
+      const errTxt = (data && (data.code || data.error || data.message)) || 'unknown';
+      statusEl.textContent = `❌ Ticket inválido: ${errTxt}`;
+      // Ofrece volver a escanear
+      msg.innerHTML = `<div style="margin-top:8px">
+        <button id="btnCancel" class="btn btn-secondary">Volver a escanear</button>
+      </div>`;
+      return;
     }
-  }catch(err){
+
+    // Normaliza estructura esperada
+    const t = data.ticket || data.data?.ticket || data.data || data;
+    const ev   = t.event || '';
+    const prod = t.product || '';
+    const exp  = t.expiration_date || t.expire_at || '';
+    const st   = t.status || '';
+
+    statusEl.textContent = '✅ Ticket válido';
+
+    // Render compacto + acciones
+    msg.innerHTML = `
+      <table class="table table-sm table-bordered" style="margin-top:8px">
+        <thead>
+          <tr>
+            <th>Event</th><th>Product</th><th>Expira</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>${ev || '—'}</td>
+            <td>${prod || '—'}</td>
+            <td>${exp || '—'}</td>
+            <td><strong>${st || '—'}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">
+        <button id="btnRedeem" class="btn btn-primary">Canjear</button>
+        <button id="btnCancel" class="btn btn-outline">Cancelar</button>
+      </div>
+    `;
+
+  } catch (err) {
     statusEl.textContent = '⚠️ Error al validar';
+    msg.innerHTML = `<div style="margin-top:8px">
+      <button id="btnCancel" class="btn btn-secondary">Volver a escanear</button>
+    </div>`;
+  } finally {
+    processing = false;
   }
 }
+
 
 btnStart.onclick = startCamera;
 btnStop.onclick  = stopCamera;
 
 
+function pauseCameraUI(){
+  // Oculta video y libera cámara, pero no regresa a estado idle
+  try {
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+  } catch(e){}
+  video.srcObject = null;
+  video.classList.add('visually-hidden');
 
+  // Oculta botón Detener y mantiene oculto el botón Scanear
+  btnStop.classList.add('visually-hidden');
+  btnStart.classList.add('visually-hidden');
+}
+
+document.getElementById('scanMsg').addEventListener('click', async (ev) => {
+  const id = ev.target?.id;
+  if (!id) return;
+
+  if (id === 'btnCancel') {
+    // Limpia UI y vuelve a escanear
+    document.getElementById('scanMsg').innerHTML = '';
+    statusEl.textContent = 'Listo para escanear.';
+    // Reactiva botones adecuados y cámara:
+    btnStop.classList.remove('visually-hidden');   // volvemos a mostrar Detener
+    // El botón Scanear sigue oculto; reanudamos directamente:
+    startCamera();
+    return;
+  }
+
+  if (id === 'btnRedeem') {
+    if (!lastSerial) return;
+
+    const msg = document.getElementById('scanMsg');
+    statusEl.textContent = 'Procesando canje…';
+
+    try {
+      // Endpoint recomendado: 'redeem'. Si tu server expone 'use' o similar,
+      // dejamos un fallback elegante:
+      let j = await apiPost('redeem', { serial: lastSerial });
+      if (!j || !j.ok) {
+        // fallback opcional si tu backend usa otro path:
+        j = await apiPost('use', { serial: lastSerial });
+      }
+
+      if (!j || !j.ok) {
+        const errTxt = (j && (j.code || j.error || j.message)) || 'unknown';
+        statusEl.textContent = `❌ No fue posible canjear: ${errTxt}`;
+        return;
+      }
+
+      // Actualiza visualmente el status (si tu API regresa el ticket actualizado)
+      const t = j.ticket || j.data?.ticket || j.data || j;
+      const newStatus = (t && (t.status || t.new_status)) || 'USADO';
+      statusEl.textContent = '🎉 Canje realizado con éxito';
+      // Sustituimos la celda de status si existe la tabla:
+      const tdStatus = document.querySelector('#scanMsg table tbody tr td:nth-child(4)');
+      if (tdStatus) tdStatus.innerHTML = `<strong>${newStatus}</strong>`;
+
+      // Opcional: después del canje, vuelve a escanear automáticamente
+      // setTimeout(() => document.getElementById('btnCancel').click(), 800);
+
+    } catch (e) {
+      statusEl.textContent = '⚠️ Error durante el canje';
+    }
+  }
+});
 
