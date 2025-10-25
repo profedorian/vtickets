@@ -18,6 +18,15 @@ const clearToken = () => localStorage.removeItem('vk_token');
 const setIsAdmin = v => localStorage.setItem('vk_is_admin', v ? '1' : '0');
 const getIsAdmin = () => localStorage.getItem('vk_is_admin') === '1';
 
+
+// Normaliza estado global en window (evita problemas de scope / type="module")
+if (typeof window.running === 'undefined')   window.running = false;
+if (typeof window.stream === 'undefined')    window.stream  = null;
+if (typeof window.rafId === 'undefined')     window.rafId   = null;
+if (typeof window.zxingReader === 'undefined') window.zxingReader = null;
+
+
+
 async function withTimeout(executor, ms=15000){
   const ac = new AbortController();
   const t = setTimeout(()=>ac.abort(), ms);
@@ -267,25 +276,9 @@ document.getElementById('btnBackEvents').onclick = () => {
 
 renderEvents();
 
-// --- generar tickets ---
-// function CrearTicket(){
-	// const res = await fetch(GAS_URL + '?path=tickets.generate', {
-	  // method: 'POST',
-	  // headers: {'Content-Type':'application/json'},
-	  // body: JSON.stringify({
-		// event: 'KERMES2025_28OCT',
-		// product: 'GENERAL',
-		// count: 100,
-		// expiration_date: '2025-10-28'
-	  // })
-	// });
-	// const data = await res.json();
-// }
-//const btnPrueba = document.getElementById('Prueba');
-//btnPrueba.onclick = CrearTicket;
-
+// --- escanear tickets ---
 async function startCamera(){
-  if (running) return;
+  if (window.running) return;
 
   // UI: estado de escaneo
   btnStart.disabled = true;
@@ -305,27 +298,27 @@ async function startCamera(){
   lastSerial = null;
 
   // Si ZXing quedó activo de una sesión anterior, resétalo
-  try { zxingReader?.reset?.(); } catch(e){}
+  try { window.zxingReader?.reset?.(); } catch(e){}
 
   // Abrir cámara
-  stream = await navigator.mediaDevices.getUserMedia({
+  window.stream = await navigator.mediaDevices.getUserMedia({
     video: { facingMode: { ideal: 'environment' }, width: { ideal:1280 }, height:{ ideal:720 } },
     audio: false
   });
-  video.srcObject = stream;
+  video.srcObject = window.stream;
   await video.play();
-  running = true;
+  window.running = true;
 
   // Mensaje según método de detección
   statusEl.textContent = detector ? 'Escaneando con detector nativo…' : 'Escaneando con ZXing…';
 
   // Iniciar bucle
-  rafId = requestAnimationFrame(loop);
+  window.rafId = requestAnimationFrame(loop);
 }
 
 function stopCamera(){
   // Estado general → IDLE
-  running = false;
+  window.running = false;
 
   btnStart.disabled = false;
   btnStart.classList.remove('visually-hidden');
@@ -334,17 +327,17 @@ function stopCamera(){
   btnStop.classList.add('visually-hidden');
 
   // Detener RAF
-  try { cancelAnimationFrame(rafId); } catch(e){}
-  rafId = null;
+  try { cancelAnimationFrame(window.rafId); } catch(e){}
+  window.rafId = null;
 
   // Detener ZXing si estaba activo
-  try { zxingReader?.reset?.(); } catch(e){}
+  try { window.zxingReader?.reset?.(); } catch(e){}
 
   // Cerrar stream
   try {
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop());
-      stream = null;
+    if (window.stream) {
+      window.stream.getTracks().forEach(t => t.stop());
+      window.stream = null;
     }
   } catch(e){}
 
@@ -360,7 +353,7 @@ function stopCamera(){
 }
 
 async function loop(){
-  if (!running) return;
+  if (!window.running) return;
 
   try{
     if (detector){
@@ -370,14 +363,14 @@ async function loop(){
         const serial = (barcodes[0].rawValue || '').trim();
         if (serial && !processing){
           // Pausar cámara SIN volver a idle: ocultar video y Stop, mantener Start oculto
-          running = false;
-          try { cancelAnimationFrame(rafId); } catch(e){}
-          rafId = null;
+          window.running = false;
+          try { cancelAnimationFrame(window.rafId); } catch(e){}
+          window.rafId = null;
 
           try {
-            if (stream) {
-              stream.getTracks().forEach(t => t.stop());
-              stream = null;
+            if (window.stream) {
+              window.stream.getTracks().forEach(t => t.stop());
+              window.stream = null;
             }
           } catch(e){}
           video.srcObject = null;
@@ -390,32 +383,29 @@ async function loop(){
           statusEl.classList.remove('visually-hidden');
           statusEl.textContent = `QR detectado: ${serial}. Validando…`;
 
-          // Disparar validación (no await necesario, pero puedes usar await si prefieres)
           onScan(serial);
           return; // no seguir el loop hasta reanudar escaneo
         }
       }
     } else {
       // --- Fallback dinámico a ZXing
-      if (!zxingReader){
+      if (!window.zxingReader){
         const { BrowserMultiFormatReader } = await import('https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/esm5/index.min.js');
-        zxingReader = new BrowserMultiFormatReader();
-        await zxingReader.decodeFromVideoDevice(null, video, (res, err) => {
-          if (res && running && !processing){
+        window.zxingReader = new BrowserMultiFormatReader();
+        await window.zxingReader.decodeFromVideoDevice(null, video, (res, err) => {
+          if (res && window.running && !processing){
             const serial = (res.getText() || '').trim();
             if (serial){
               // Pausar cámara como en el caso nativo
-              running = false;
-              try { cancelAnimationFrame(rafId); } catch(e){}
-              rafId = null;
+              window.running = false;
+              try { cancelAnimationFrame(window.rafId); } catch(e){}
+              window.rafId = null;
 
+              try { window.zxingReader?.reset?.(); } catch(e){}
               try {
-                zxingReader?.reset?.();
-              } catch(e){}
-              try {
-                if (stream) {
-                  stream.getTracks().forEach(t => t.stop());
-                  stream = null;
+                if (window.stream) {
+                  window.stream.getTracks().forEach(t => t.stop());
+                  window.stream = null;
                 }
               } catch(e){}
               video.srcObject = null;
@@ -438,9 +428,10 @@ async function loop(){
   }
 
   // Siguiente frame mientras seguimos escaneando
-  if (running) rafId = requestAnimationFrame(loop);
+  if (window.running) window.rafId = requestAnimationFrame(loop);
 }
 
+// --- fin
 
 async function onScan(serial){
   if (processing) return;
@@ -514,7 +505,7 @@ async function onScan(serial){
 
 btnStart.onclick = startCamera;
 btnStop.onclick  = stopCamera;
-
+running
 
 function pauseCameraUI(){
   // Oculta video y libera cámara, pero no regresa a estado idle
