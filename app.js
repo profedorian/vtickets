@@ -26,6 +26,7 @@ if (typeof window.rafId === 'undefined')     window.rafId   = null;
 if (typeof window.zxingReader === 'undefined') window.zxingReader = null;
 if (typeof window.processing === 'undefined') window.processing = false;
 if (typeof window.lastSerial === 'undefined') window.lastSerial = null;
+let detector = ('BarcodeDetector' in window) ? new BarcodeDetector({formats:['qr_code']}) : null;
 const video = document.getElementById('video');
 const btnStart = document.getElementById('btnStart');
 const btnStop  = document.getElementById('btnStop');
